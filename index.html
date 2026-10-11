@@ -1,0 +1,40 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE WINTER ARC DUNGEON</title>
+<style>
+body{background:#050914;color:#e8f4ff;font-family:Arial;text-align:center;padding:25px}
+h1{color:#63d9ff}
+.card{background:#101b30;padding:20px;margin:18px auto;border-radius:16px;max-width:380px}
+button{background:#176b91;color:white;border:0;padding:12px 18px;border-radius:10px;margin:8px}
+</style>
+</head>
+<body>
+<h1>THE WINTER ARC DUNGEON</h1>
+<p>YOUR ARC STARTS NOW.</p>
+<div class="card">
+<h2>PLAYER STATUS</h2>
+<p>Rank: <span id="rank">E</span></p>
+<p>XP: <span id="xp">0</span></p>
+<button onclick="startQuest()">START QUEST</button>
+</div>
+<div class="card">
+<h2>DAILY PHYSICAL QUEST</h2>
+<p>Choose gentle movement you can do without pain.</p>
+<label><input type="checkbox"> 5 minutes gentle movement</label><br><br>
+<label><input type="checkbox"> Drink water</label><br><br>
+<label><input type="checkbox"> Get enough sleep</label>
+</div>
+<script>
+let xp = Number(localStorage.getItem("winterXP") || 0);
+document.getElementById("xp").textContent = xp;
+function startQuest(){
+xp += 10;
+localStorage.setItem("winterXP",xp);
+document.getElementById("xp").textContent = xp;
+}
+</script>
+</body>
+</html>
