@@ -1,17 +1,28 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>THE WINTER ARC DUNGEON</title>
 <style>
-body{background:#050914;color:#e8f4ff;font-family:Arial;text-align:center;padding:25px}
-h1{color:#63d9ff}
-.card{background:#101b30;padding:20px;margin:18px auto;border-radius:16px;max-width:380px}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(#050914,#0a1230);color:#e8f4ff;font-family:Arial,sans-serif;padding:20px 16px 100px;min-height:100vh}
+h1{color:#63d9ff;text-align:center;font-size:24px;margin:10px 0}
+h2{font-size:22px;margin:18px 4px 12px}
+h3{font-size:13px;letter-spacing:2px;color:#9fb4d0;margin:22px 6px 10px}
+.card{background:linear-gradient(135deg,#0d1a33,#08101f);padding:16px;margin:10px 0;box-shadow:inset 0 0 0 1px #1d4f8f;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,16px 100%,0 calc(100% - 16px))}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat small{display:block;font-size:11px;letter-spacing:1.5px;color:#9fb4d0}
+.stat b{font-size:26px;display:block;margin-top:6px}
+.page{display:none}
+.page.active{display:block}
 label{display:block;margin:14px 0;font-size:17px}
+input[type=checkbox]{width:20px;height:20px;vertical-align:middle;margin-right:8px}
 .bar{background:#050914;border-radius:8px;height:12px;margin-top:10px}
 #fill{background:#63d9ff;height:12px;border-radius:8px;width:0}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#070d1c;border-top:1px solid #1d4f8f}
+nav button{flex:1;background:none;border:0;color:#8aa0bd;padding:12px 0 14px;font-size:12px}
+nav button span{display:block;font-size:22px}
+nav button.on{color:#4ade80}
 #splash{position:fixed;inset:0;background:#000;z-index:99;display:flex;align-items:center;justify-content:center}
 #wrap{position:relative;width:min(100vw,66.67vh);aspect-ratio:2/3}
 #wrap img{width:100%;height:100%;display:block}
@@ -19,70 +30,160 @@ label{display:block;margin:14px 0;font-size:17px}
 #wrap::after{content:"";position:absolute;left:0;top:0;width:100%;height:7%;background:linear-gradient(#02040c 60%,transparent);pointer-events:none}
 </style>
 </head>
-<body><div id="splash">
+<body>
+<div id="splash">
 <div id="wrap">
 <img src="winter-arc-enter.png" alt="Enter">
 <button id="enterBtn" onclick="enter()" aria-label="Enter"></button>
 </div>
 </div>
-<h1>THE WINTER ARC DUNGEON</h1>
-<p>YOUR ARC STARTS NOW.</p>
 
+<h1>THE WINTER ARC DUNGEON</h1>
+
+<div id="home" class="page active">
 <div class="card">
-<h2>PLAYER STATUS</h2>
-<p>Rank: <span id="rank">E</span></p>
-<p>XP: <span id="xp">0</span> <span id="next"></span></p>
+<h2 style="margin-top:0">PLAYER STATUS</h2>
+<p>Rank: <b id="rank">E</b></p>
+<p>XP: <b id="xp">0</b> <span id="next"></span></p>
 <div class="bar"><div id="fill"></div></div>
 </div>
-
-<div class="card">
-<h2>DAILY QUESTS (+10 XP each)</h2>
-<label><input type="checkbox" id="q1"> 5 minutes gentle movement</label>
-<label><input type="checkbox" id="q2"> Drink water</label>
-<label><input type="checkbox" id="q3"> Get enough sleep</label>
-<p style="font-size:13px;opacity:.7">Quests reset every new day.</p>
+<p style="text-align:center;opacity:.7">YOUR ARC STARTS NOW.</p>
 </div>
+
+<div id="quests" class="page">
+<h2>Daily Quests</h2>
+<div class="card">
+<div id="qlist"></div>
+<p style="font-size:13px;opacity:.7">+10 XP each. Quests reset every new day.</p>
+</div>
+</div>
+
+<div id="analytics" class="page">
+<h2>XP Analytics</h2>
+<div class="grid">
+<div class="card stat"><small>TOTAL XP</small><b id="sTotal">0</b></div>
+<div class="card stat"><small>WEEKLY</small><b id="sWeek">0</b></div>
+<div class="card stat"><small>MONTHLY</small><b id="sMonth">0</b></div>
+<div class="card stat"><small>AVG/DAY</small><b id="sAvg">0</b></div>
+</div>
+<div class="card stat"><small>TASKS COMPLETED</small><b id="sTasks">0</b></div>
+<h3>DAILY XP (LAST 7 DAYS)</h3>
+<div class="card" id="chart"></div>
+<h3>TOP QUEST</h3>
+<div class="card stat"><b id="sTop" style="font-size:20px">-</b><small id="sTopN"></small></div>
+</div>
+
+<nav>
+<button id="nb-home" class="on" onclick="show('home')"><span>🏠</span>Home</button>
+<button id="nb-quests" onclick="show('quests')"><span>✅</span>Quests</button>
+<button id="nb-analytics" onclick="show('analytics')"><span>📈</span>Analytics</button>
+</nav>
 
 <script>
 function enter(){document.getElementById("splash").style.display="none";}
-const quests=["q1","q2","q3"];
-const ranks=[["E",0],["D",100],["C",300],["B",600],["A",1000],["S",2000]];
-const today=new Date().toDateString();
-
-if(localStorage.getItem("winterDay")!==today){
-  quests.forEach(q=>localStorage.removeItem(q));
-  localStorage.setItem("winterDay",today);
+function show(p){
+  ["home","quests","analytics"].forEach(function(x){
+    document.getElementById(x).classList.toggle("active",x===p);
+    document.getElementById("nb-"+x).classList.toggle("on",x===p);
+  });
 }
-
+const quests=[{id:"q1",name:"5 minutes gentle movement"},{id:"q2",name:"Drink water"},{id:"q3",name:"Get enough sleep"}];
+const ranks=[["E",0],["D",100],["C",300],["B",600],["A",1000],["S",2000]];
+function key(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+const todayKey=key(new Date());
+function load(k,def){try{return JSON.parse(localStorage.getItem(k))||def;}catch(e){return def;}}
 let xp=Number(localStorage.getItem("winterXP")||0);
-
+let hist=load("winterHist",{});
+let counts=load("winterCounts",{});
+let done=load("winterDone",{});
+if(localStorage.getItem("winterDay")!==todayKey){
+  done={};
+  localStorage.setItem("winterDay",todayKey);
+}
+function save(){
+  localStorage.setItem("winterXP",xp);
+  localStorage.setItem("winterHist",JSON.stringify(hist));
+  localStorage.setItem("winterCounts",JSON.stringify(counts));
+  localStorage.setItem("winterDone",JSON.stringify(done));
+}
+function toggle(id,checked){
+  const h=hist[todayKey]||{xp:0,tasks:0};
+  if(checked){xp+=10;h.xp+=10;h.tasks+=1;counts[id]=(counts[id]||0)+1;done[id]=1;}
+  else{
+    xp=Math.max(0,xp-10);h.xp=Math.max(0,h.xp-10);h.tasks=Math.max(0,h.tasks-1);
+    counts[id]=Math.max(0,(counts[id]||0)-1);delete done[id];
+  }
+  hist[todayKey]=h;save();render();
+}
+function lastDays(n){
+  const out=[];
+  for(let i=n-1;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    const h=hist[key(d)];
+    out.push({v:h?h.xp:0,l:["S","M","T","W","T","F","S"][d.getDay()]});
+  }
+  return out;
+}
+function chart(days){
+  const W=320,H=170,L=34,R=12,T=14,B=28;
+  const max=Math.max(30,Math.ceil(Math.max.apply(null,days.map(function(d){return d.v;}))/10)*10);
+  const X=function(i){return L+i*(W-L-R)/6;};
+  const Y=function(v){return T+(H-T-B)*(1-v/max);};
+  let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%">';
+  [0,max/2,max].forEach(function(g){
+    s+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(g)+'" y2="'+Y(g)+'" stroke="#1d3358"/>';
+    s+='<text x="4" y="'+(Y(g)+4)+'" fill="#9fb4d0" font-size="10">'+Math.round(g)+'</text>';
+  });
+  const pts=days.map(function(d,i){return X(i)+","+Y(d.v);}).join(" ");
+  s+='<polygon points="'+X(0)+','+Y(0)+' '+pts+' '+X(6)+','+Y(0)+'" fill="#2f7be0" opacity=".25"/>';
+  s+='<polyline points="'+pts+'" fill="none" stroke="#3b8cf0" stroke-width="3"/>';
+  days.forEach(function(d,i){
+    s+='<circle cx="'+X(i)+'" cy="'+Y(d.v)+'" r="5" fill="#4aa3ff" stroke="#fff" stroke-width="2"/>';
+    s+='<text x="'+X(i)+'" y="'+(H-8)+'" fill="#9fb4d0" font-size="11" text-anchor="middle">'+d.l+'</text>';
+  });
+  return s+'</svg>';
+}
 function render(){
   let i=0;
-  ranks.forEach((r,idx)=>{ if(xp>=r[1]) i=idx; });
+  ranks.forEach(function(r,idx){if(xp>=r[1])i=idx;});
   document.getElementById("rank").textContent=ranks[i][0];
   document.getElementById("xp").textContent=xp;
-  const nextR=ranks[i+1];
-  if(nextR){
-    document.getElementById("next").textContent="/ "+nextR[1];
-    const p=(xp-ranks[i][1])/(nextR[1]-ranks[i][1])*100;
-    document.getElementById("fill").style.width=p+"%";
+  const nr=ranks[i+1];
+  if(nr){
+    document.getElementById("next").textContent="/ "+nr[1];
+    document.getElementById("fill").style.width=((xp-ranks[i][1])/(nr[1]-ranks[i][1])*100)+"%";
   }else{
     document.getElementById("next").textContent="(MAX)";
     document.getElementById("fill").style.width="100%";
   }
+  const days=lastDays(7);
+  const week=days.reduce(function(a,d){return a+d.v;},0);
+  const now=new Date();
+  const pre=now.getFullYear()+"-"+(now.getMonth()+1)+"-";
+  let month=0;
+  Object.keys(hist).forEach(function(k){if(k.indexOf(pre)===0)month+=hist[k].xp;});
+  const tasks=Object.keys(counts).reduce(function(a,k){return a+counts[k];},0);
+  document.getElementById("sTotal").textContent=xp;
+  document.getElementById("sWeek").textContent=week;
+  document.getElementById("sMonth").textContent=month;
+  document.getElementById("sAvg").textContent=(week/7).toFixed(1);
+  document.getElementById("sTasks").textContent=tasks;
+  document.getElementById("chart").innerHTML=chart(days);
+  let top=null;
+  quests.forEach(function(q){if((counts[q.id]||0)>0&&(!top||counts[q.id]>counts[top.id]))top=q;});
+  document.getElementById("sTop").textContent=top?top.name:"-";
+  document.getElementById("sTopN").textContent=top?counts[top.id]+" TIMES":"";
 }
-
-quests.forEach(q=>{
-  const box=document.getElementById(q);
-  box.checked=localStorage.getItem(q)==="1";
-  box.addEventListener("change",()=>{
-    if(box.checked){ xp+=10; localStorage.setItem(q,"1"); }
-    else { xp=Math.max(0,xp-10); localStorage.setItem(q,"0"); }
-    localStorage.setItem("winterXP",xp);
-    render();
-  });
+const list=document.getElementById("qlist");
+quests.forEach(function(q){
+  const l=document.createElement("label");
+  const b=document.createElement("input");
+  b.type="checkbox";b.checked=!!done[q.id];
+  b.addEventListener("change",function(){toggle(q.id,b.checked);});
+  l.appendChild(b);l.appendChild(document.createTextNode(q.name));
+  list.appendChild(l);
 });
-
+save();
 render();
 </script>
 </body>
