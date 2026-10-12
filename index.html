@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,33 +9,70 @@
 body{background:#050914;color:#e8f4ff;font-family:Arial;text-align:center;padding:25px}
 h1{color:#63d9ff}
 .card{background:#101b30;padding:20px;margin:18px auto;border-radius:16px;max-width:380px}
-button{background:#176b91;color:white;border:0;padding:12px 18px;border-radius:10px;margin:8px}
+label{display:block;margin:14px 0;font-size:17px}
+.bar{background:#050914;border-radius:8px;height:12px;margin-top:10px}
+#fill{background:#63d9ff;height:12px;border-radius:8px;width:0}
 </style>
 </head>
 <body>
 <h1>THE WINTER ARC DUNGEON</h1>
 <p>YOUR ARC STARTS NOW.</p>
+
 <div class="card">
 <h2>PLAYER STATUS</h2>
 <p>Rank: <span id="rank">E</span></p>
-<p>XP: <span id="xp">0</span></p>
-<button onclick="startQuest()">START QUEST</button>
+<p>XP: <span id="xp">0</span> <span id="next"></span></p>
+<div class="bar"><div id="fill"></div></div>
 </div>
+
 <div class="card">
-<h2>DAILY PHYSICAL QUEST</h2>
-<p>Choose gentle movement you can do without pain.</p>
-<label><input type="checkbox"> 5 minutes gentle movement</label><br><br>
-<label><input type="checkbox"> Drink water</label><br><br>
-<label><input type="checkbox"> Get enough sleep</label>
+<h2>DAILY QUESTS (+10 XP each)</h2>
+<label><input type="checkbox" id="q1"> 5 minutes gentle movement</label>
+<label><input type="checkbox" id="q2"> Drink water</label>
+<label><input type="checkbox" id="q3"> Get enough sleep</label>
+<p style="font-size:13px;opacity:.7">Quests reset every new day.</p>
 </div>
+
 <script>
-let xp = Number(localStorage.getItem("winterXP") || 0);
-document.getElementById("xp").textContent = xp;
-function startQuest(){
-xp += 10;
-localStorage.setItem("winterXP",xp);
-document.getElementById("xp").textContent = xp;
+const quests=["q1","q2","q3"];
+const ranks=[["E",0],["D",100],["C",300],["B",600],["A",1000],["S",2000]];
+const today=new Date().toDateString();
+
+if(localStorage.getItem("winterDay")!==today){
+  quests.forEach(q=>localStorage.removeItem(q));
+  localStorage.setItem("winterDay",today);
 }
+
+let xp=Number(localStorage.getItem("winterXP")||0);
+
+function render(){
+  let i=0;
+  ranks.forEach((r,idx)=>{ if(xp>=r[1]) i=idx; });
+  document.getElementById("rank").textContent=ranks[i][0];
+  document.getElementById("xp").textContent=xp;
+  const nextR=ranks[i+1];
+  if(nextR){
+    document.getElementById("next").textContent="/ "+nextR[1];
+    const p=(xp-ranks[i][1])/(nextR[1]-ranks[i][1])*100;
+    document.getElementById("fill").style.width=p+"%";
+  }else{
+    document.getElementById("next").textContent="(MAX)";
+    document.getElementById("fill").style.width="100%";
+  }
+}
+
+quests.forEach(q=>{
+  const box=document.getElementById(q);
+  box.checked=localStorage.getItem(q)==="1";
+  box.addEventListener("change",()=>{
+    if(box.checked){ xp+=10; localStorage.setItem(q,"1"); }
+    else { xp=Math.max(0,xp-10); localStorage.setItem(q,"0"); }
+    localStorage.setItem("winterXP",xp);
+    render();
+  });
+});
+
+render();
 </script>
 </body>
 </html>
