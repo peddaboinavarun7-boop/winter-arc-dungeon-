@@ -88,7 +88,7 @@ function show(p){
   });
 }
 const quests=[{id:"q1",name:"5 minutes gentle movement"},{id:"q2",name:"Drink water"},{id:"q3",name:"Get enough sleep"}];
-const ranks=[["E",0],["D",100],["C",300],["B",600],["A",1000],["S",2000]];
+const quests=[{id:"q1",name:"5 minutes gentle movement"},{id:"q2",name:"Drink water"},{id:"q3",name:"Get enough sleep"},{id:"q4",name:"Study 1 hour"},{id:"q5",name:"Read 10 pages"},{id:"q6",name:"Meditate 5 minutes"},{id:"q7",name:"No junk food"},{id:"q8",name:"Plan tomorrow"}];
 function key(d){return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
 const todayKey=key(new Date());
 function load(k,def){try{return JSON.parse(localStorage.getItem(k))||def;}catch(e){return def;}}
